@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug: cargo run",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": ["run", "--bin", "maze"]
+      },
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Debug: cargo test",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": ["test", "--no-run", "--bin", "maze"]
+      },
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}
