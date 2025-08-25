@@ -4,6 +4,7 @@ mod framebuffer;
 mod game_state;
 mod input;
 mod maze;
+mod minimap;
 mod player;
 mod render3d;
 mod resources;
@@ -12,6 +13,7 @@ use framebuffer::Framebuffer;
 use game_state::{GameManager, GameState};
 use input::process_events;
 use maze::load_maze;
+use minimap::Minimap;
 use player::Player;
 use raylib::prelude::*;
 use render3d::render3d;
@@ -27,6 +29,9 @@ fn main() {
     let (mut rl, thread) =
         raylib::init().size(screen_width as i32, screen_height as i32).title("Maze 3D").build();
 
+    // Print Raylib version info
+    println!("Raylib version: 5.6-dev");
+
     let mut framebuffer = Framebuffer::new(screen_width as u32, screen_height as u32, Color::BLACK);
 
     let mut player =
@@ -36,6 +41,9 @@ fn main() {
     let initial_player_angle = player.a;
 
     let mut game_manager = GameManager::new();
+
+    // Create minimap
+    let minimap = Minimap::new(screen_width as u32, screen_height as u32);
 
     // Load textures with raylib handle
     let textures = Textures::new(&mut rl, &thread);
@@ -97,6 +105,13 @@ fn main() {
                     18,
                     Color::GREEN,
                 );
+                d.draw_text(
+                    "Minimap shows your position",
+                    screen_width / 2 - 125,
+                    screen_height / 2 + 140,
+                    18,
+                    Color::YELLOW,
+                );
             }
 
             GameState::Playing => {
@@ -113,6 +128,9 @@ fn main() {
                 framebuffer.clear();
                 render3d(&mut framebuffer, &player, &maze, &textures);
 
+                // Render minimap on top of 3D view
+                minimap.render(&mut framebuffer, &player, &maze, block_size);
+
                 let mut d = rl.begin_drawing(&thread);
                 d.clear_background(Color::BLACK);
                 framebuffer.draw_to_screen(&mut d);
@@ -126,6 +144,9 @@ fn main() {
                 if fps < 15 {
                     d.draw_text("LOW FPS!", screen_width - 80, 35, 16, Color::RED);
                 }
+
+                // Minimap label
+                d.draw_text("MINIMAP", 30, screen_height - 30, 16, Color::WHITE);
             }
 
             GameState::Victory => {
@@ -135,10 +156,8 @@ fn main() {
                     game_manager.reset();
                     player.pos = initial_player_pos;
                     player.a = initial_player_angle;
-                } else if rl.is_key_pressed(KeyboardKey::KEY_ESCAPE)
-                    || rl.is_key_pressed(KeyboardKey::KEY_M)
-                {
-                    // Return to menu
+                } else if rl.is_key_pressed(KeyboardKey::KEY_ESCAPE) {
+                    // Return to menu (but don't use KEY_M here since it's used for mute)
                     game_manager.state = GameState::Menu;
                     player.pos = initial_player_pos;
                     player.a = initial_player_angle;
@@ -195,7 +214,7 @@ fn main() {
                 );
 
                 d.draw_text(
-                    "Press M to Return to Menu",
+                    "Press ESC to Return to Menu",
                     screen_width / 2 - 140,
                     screen_height / 2 + 90,
                     22,
